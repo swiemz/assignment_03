@@ -38,3 +38,58 @@ Test it: pytest tests/test_streamlit.py -k process_files
 # README Step 7 names the two traps. The tests are built around them: choosing a
 # file without clicking must change nothing, and a rerun with the same file still
 # chosen must not count it again.
+
+import streamlit as st
+import json
+import os
+from packaging_parser import parse_packaging, calc_total_units, get_unit
+
+st.title("Process Package Files")
+
+if "files_processed" not in st.session_state:
+    st.session_state.files_processed = 0
+if "packages_processed" not in st.session_state:
+    st.session_state.packages_processed = 0
+if "summary_lines" not in st.session_state:
+    st.session_state.summary_lines = []
+
+uploaded_file = st.file_uploader("Upload package file", key="package_file")
+
+if st.button("Process file", key="process") and uploaded_file is not None:
+    contents = uploaded_file.read().decode("utf-8")
+    lines = contents.split('\n')
+
+    parsed_packages = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        package = parse_packaging(line)
+        parsed_packages.append(package)
+
+    total_packages = len(parsed_packages)
+
+    input_filename = uploaded_file.name
+    base_name = os.path.splitext(input_filename)[0]
+    output_path = os.path.join("data", f"{base_name}.json")
+    os.makedirs("data", exist_ok=True)
+    with open(output_path, "w") as f:
+        json.dump(parsed_packages, f, indent=2)
+
+    processed_files = [line.split(" written to ")[1] for line in st.session_state.summary_lines]
+    if output_path not in processed_files:
+        st.session_state.files_processed += 1
+        st.session_state.packages_processed += total_packages
+        st.session_state.summary_lines.append(f"{total_packages} packages written to {output_path}")
+
+col1, col2 = st.columns(2)
+col1.metric("Files processed", st.session_state.files_processed)
+col2.metric("Packages processed", st.session_state.packages_processed)
+
+for line in st.session_state.summary_lines:
+    st.info(line)
+
+if st.button("Reset"):
+    st.session_state.files_processed = 0
+    st.session_state.packages_processed = 0
+    st.session_state.summary_lines = []
