@@ -52,8 +52,8 @@ if uploaded_file is not None:
         st.write(f"{line} ➡️ Total 📦 Size: {total} {unit}")
 
     if total_lines_processed > 0:
-        input_filename = uploaded_file.name  # e.g., packaging1.txt
-        base_name = os.path.splitext(input_filename)[0]  # "packaging1"
+        input_filename = uploaded_file.name 
+        base_name = os.path.splitext(input_filename)[0] 
         output_path = os.path.join("data", f"{base_name}.json")
 
         os.makedirs("data", exist_ok=True)
